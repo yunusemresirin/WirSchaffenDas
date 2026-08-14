@@ -9,7 +9,7 @@ Die Tests konzentrieren sich auf die für den Proof-of-Concept wichtigsten Anfor
 | Ebene | Zweck | Umsetzung |
 |---|---|---|
 | Unit Test | Domänenlogik schnell prüfen | JUnit 5 / AssertJ |
-| Service Test | Erzeugen und Laden von Konfigurationen prüfen | JUnit 5 / Mockito |
+| Service Test | Erzeugen und Speichern von Konfigurationen prüfen | JUnit 5 / Mockito |
 | End-to-End | Zusammenspiel aller sechs Container prüfen | `scripts/e2e.sh` |
 | Demo | Manuelle Präsentation der Use Cases | Postman Collection |
 
@@ -55,7 +55,7 @@ docker compose up --build -d
 Danach:
 
 ```bash
-./scripts/e2e.sh
+bash scripts/e2e.sh
 ```
 
 Das Skript prüft zwei Szenarien.
