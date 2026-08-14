@@ -25,6 +25,8 @@ Status und Ergebnisse werden von den Analyse-Services proaktiv an `analysis-mana
 mvn clean verify
 ```
 
+Damit werden unter anderem die Unit-/Service-Tests für `AnalysisRun` und den `configuration-service` ausgeführt.
+
 ## Gesamtsystem mit Docker Compose starten
 
 ```bash
@@ -60,6 +62,19 @@ Persistierte H2-Daten ebenfalls löschen:
 ```bash
 docker compose down -v
 ```
+
+## Automatisierter End-to-End-Test
+
+Voraussetzungen: Docker Compose, `curl` und `jq`.
+
+```bash
+docker compose up --build -d
+bash scripts/e2e.sh
+```
+
+Das Skript testet sowohl den Happy Path als auch den Ausfall von `thermal-analysis-service` mit anschließendem Retry.
+
+Weitere Details: `docs/testing.md`.
 
 ## Postman-Demo
 
@@ -97,7 +112,13 @@ In Postman `retryAlgorithm = THERMAL` verwenden und `05 Retry Failed Algorithm` 
 
 ## Dokumentation
 
-- `docs/requirements.md`
-- `docs/requirements_short.md`
-- `docs/ddd.md`
-- `docs/architecture.md`
+- `docs/requirements.md` – vollständige Anforderungen
+- `docs/requirements_short.md` – kompakte Requirements-Übersicht
+- `docs/ddd.md` – Domänenmodell und Bounded Contexts
+- `docs/architecture.md` – Architektur- und REST-Entscheidungen
+- `docs/testing.md` – Teststrategie und E2E-Szenarien
+- `docs/architecture-views.md` – Übersicht des 4-Sichten-Modells
+- `docs/diagrams/context.puml` – Kontextsicht
+- `docs/diagrams/building-blocks.puml` – Bausteinsicht
+- `docs/diagrams/runtime.puml` – Laufzeitsicht
+- `docs/diagrams/deployment.puml` – Verteilungssicht
