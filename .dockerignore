@@ -1,0 +1,9 @@
+.git
+.idea
+.vscode
+**/target
+**/data
+*.log
+*.zip
+docs
+postman

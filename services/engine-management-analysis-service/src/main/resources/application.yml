@@ -1,0 +1,13 @@
+server:
+  port: 8086
+spring:
+  application:
+    name: engine-management-analysis-service
+services:
+  analysis-management:
+    url: ${ANALYSIS_MANAGEMENT_SERVICE_URL:http://localhost:8082}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

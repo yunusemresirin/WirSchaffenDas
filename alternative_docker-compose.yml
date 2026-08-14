@@ -1,0 +1,19 @@
+services:
+
+  configuration-service:
+    image: ysirin2s/seka-wirschaffendas:configuration-service
+
+  analysis-management-service:
+    image: ysirin2s/seka-wirschaffendas:analysis-management-service
+
+  engine-management-analysis-service:
+    image: ysirin2s/seka-wirschaffendas:engine-management-analysis-service
+
+  fluid-analysis-service:
+    image: ysirin2s/seka-wirschaffendas:fluid-analysis-service
+
+  thermal-analysis-service:
+    image: ysirin2s/seka-wirschaffendas:thermal-analysis-service
+
+  electrical-analysis-service:
+    image: ysirin2s/seka-wirschaffendas:electrical-analysis-service

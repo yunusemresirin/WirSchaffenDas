@@ -1,0 +1,23 @@
+server:
+  port: 8085
+spring:
+  application:
+    name: electrical-analysis-service
+services:
+  analysis-management:
+    url: ${ANALYSIS_MANAGEMENT_SERVICE_URL:http://localhost:8082}
+  next:
+    url: ${ENGINE_MANAGEMENT_ANALYSIS_SERVICE_URL:http://localhost:8086}
+resilience4j:
+  circuitbreaker:
+    instances:
+      nextService:
+        sliding-window-size: 5
+        minimum-number-of-calls: 2
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

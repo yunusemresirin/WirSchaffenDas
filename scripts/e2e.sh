@@ -1,0 +1,148 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CONFIG_URL="${CONFIG_URL:-http://localhost:8081}"
+ANALYSIS_URL="${ANALYSIS_URL:-http://localhost:8082}"
+TIMEOUT_SECONDS="${TIMEOUT_SECONDS:-40}"
+
+for command in curl jq docker; do
+  if ! command -v "$command" >/dev/null 2>&1; then
+    echo "Fehlendes Werkzeug: $command" >&2
+    exit 1
+  fi
+done
+
+wait_for_health() {
+  local url="$1"
+  local name="$2"
+  echo "Warte auf $name ..."
+  for _ in $(seq 1 40); do
+    if curl -fsS "$url/actuator/health" | jq -e '.status == "UP"' >/dev/null 2>&1; then
+      echo "$name ist UP"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "$name wurde nicht rechtzeitig erreichbar." >&2
+  return 1
+}
+
+create_configuration() {
+  curl -fsS -X POST "$CONFIG_URL/api/configurations" \
+    -H 'Content-Type: application/json' \
+    -d '{
+      "oilSystem": "STANDARD",
+      "fuelSystem": "PREMIUM",
+      "coolingSystem": "STANDARD",
+      "electricalSystem": "PREMIUM",
+      "engineManagementSystem": "ADVANCED"
+    }' | jq -r '.configurationId'
+}
+
+start_analysis() {
+  local configuration_id="$1"
+  curl -fsS -X POST "$ANALYSIS_URL/api/analyses" \
+    -H 'Content-Type: application/json' \
+    -d "{\"configurationId\":\"$configuration_id\"}" | jq -r '.analysisId'
+}
+
+get_analysis() {
+  local analysis_id="$1"
+  curl -fsS "$ANALYSIS_URL/api/analyses/$analysis_id"
+}
+
+wait_for_overall_result() {
+  local analysis_id="$1"
+  local expected="$2"
+  for _ in $(seq 1 "$TIMEOUT_SECONDS"); do
+    local body
+    body="$(get_analysis "$analysis_id")"
+    local result
+    result="$(jq -r '.overallResult // empty' <<<"$body")"
+    if [[ "$result" == "$expected" ]]; then
+      echo "$body"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "Analysis $analysis_id erreichte overallResult=$expected nicht." >&2
+  get_analysis "$analysis_id" >&2 || true
+  return 1
+}
+
+wait_for_algorithm_status() {
+  local analysis_id="$1"
+  local algorithm="$2"
+  local expected="$3"
+  for _ in $(seq 1 "$TIMEOUT_SECONDS"); do
+    local body
+    body="$(get_analysis "$analysis_id")"
+    local status
+    status="$(jq -r --arg algorithm "$algorithm" '.algorithms[] | select(.algorithm == $algorithm) | .status' <<<"$body")"
+    if [[ "$status" == "$expected" ]]; then
+      echo "$body"
+      return 0
+    fi
+    sleep 1
+  done
+  echo "$algorithm erreichte Status $expected nicht." >&2
+  get_analysis "$analysis_id" >&2 || true
+  return 1
+}
+
+cleanup() {
+  docker compose start thermal-analysis-service >/dev/null 2>&1 || true
+}
+trap cleanup EXIT
+
+wait_for_health "$CONFIG_URL" "configuration-service"
+wait_for_health "$ANALYSIS_URL" "analysis-management-service"
+
+for port in 8083 8084 8085 8086; do
+  wait_for_health "http://localhost:$port" "analysis-service:$port"
+done
+
+echo
+echo "=== E2E-01 Happy Path ==="
+configuration_id="$(create_configuration)"
+analysis_id="$(start_analysis "$configuration_id")"
+final_body="$(wait_for_overall_result "$analysis_id" "OK")"
+
+ready_count="$(jq '[.algorithms[] | select(.status == "READY" and .result == "OK")] | length' <<<"$final_body")"
+if [[ "$ready_count" != "4" ]]; then
+  echo "Erwartet wurden vier READY/OK Algorithmen, erhalten: $ready_count" >&2
+  exit 1
+fi
+
+echo "Happy Path erfolgreich: $analysis_id"
+
+echo
+echo "=== E2E-02 Thermal-Ausfall + Retry ==="
+docker compose stop thermal-analysis-service >/dev/null
+
+configuration_id="$(create_configuration)"
+analysis_id="$(start_analysis "$configuration_id")"
+failed_body="$(wait_for_algorithm_status "$analysis_id" "THERMAL" "FAILED")"
+
+if [[ "$(jq -r '.overallResult' <<<"$failed_body")" != "FAILED" ]]; then
+  echo "Nach Thermal-Ausfall wurde overallResult=FAILED erwartet." >&2
+  exit 1
+fi
+
+echo "Thermal-Ausfall wurde korrekt erkannt."
+
+docker compose start thermal-analysis-service >/dev/null
+wait_for_health "http://localhost:8084" "thermal-analysis-service"
+
+curl -fsS -X POST "$ANALYSIS_URL/api/analyses/$analysis_id/algorithms/THERMAL/retry" >/dev/null
+retry_body="$(wait_for_overall_result "$analysis_id" "OK")"
+
+ready_count="$(jq '[.algorithms[] | select(.status == "READY" and .result == "OK")] | length' <<<"$retry_body")"
+if [[ "$ready_count" != "4" ]]; then
+  echo "Nach Retry wurden vier READY/OK Algorithmen erwartet, erhalten: $ready_count" >&2
+  exit 1
+fi
+
+echo "Retry erfolgreich: $analysis_id"
+echo
+echo "Alle End-to-End-Tests erfolgreich."

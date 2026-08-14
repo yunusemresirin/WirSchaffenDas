@@ -1,0 +1,39 @@
+@startuml
+skinparam componentStyle rectangle
+
+title Verteilungssicht – Docker Compose Deployment
+
+node "Entwicklungsrechner / Docker Host" as Host {
+    node "Docker Compose\nwirschaffendas-network" as Network {
+        node "configuration-service\nContainer :8081" as Configuration
+        node "analysis-management-service\nContainer :8082" as Management
+        node "fluid-analysis-service\nContainer :8083" as Fluid
+        node "thermal-analysis-service\nContainer :8084" as Thermal
+        node "electrical-analysis-service\nContainer :8085" as Electrical
+        node "engine-management-analysis-service\nContainer :8086" as Engine
+    }
+
+    artifact "configuration-data\nDocker Volume" as ConfigVolume
+    artifact "analysis-data\nDocker Volume" as AnalysisVolume
+}
+
+Configuration --> ConfigVolume : H2-Datei
+Management --> AnalysisVolume : H2-Datei
+
+Management --> Configuration : HTTP / Compose DNS
+Management --> Fluid : HTTP / Compose DNS
+Fluid --> Thermal : HTTP + Circuit Breaker
+Thermal --> Electrical : HTTP + Circuit Breaker
+Electrical --> Engine : HTTP + Circuit Breaker
+
+Fluid --> Management : Callback REST
+Thermal --> Management : Callback REST
+Electrical --> Management : Callback REST
+Engine --> Management : Callback REST
+
+note bottom of Network
+  Jeder Microservice ist separat containerisiert
+  und kann unabhängig gestoppt/gestartet werden.
+end note
+
+@enduml
