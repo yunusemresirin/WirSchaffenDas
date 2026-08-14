@@ -1,0 +1,31 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: analysis-management-service
+  datasource:
+    url: jdbc:h2:file:./data/analysis-db
+    driver-class-name: org.h2.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+
+services:
+  configuration:
+    url: ${CONFIGURATION_SERVICE_URL:http://localhost:8081}
+  fluid:
+    url: ${FLUID_ANALYSIS_SERVICE_URL:http://localhost:8083}
+  thermal:
+    url: ${THERMAL_ANALYSIS_SERVICE_URL:http://localhost:8084}
+  electrical:
+    url: ${ELECTRICAL_ANALYSIS_SERVICE_URL:http://localhost:8085}
+  engine-management:
+    url: ${ENGINE_MANAGEMENT_ANALYSIS_SERVICE_URL:http://localhost:8086}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

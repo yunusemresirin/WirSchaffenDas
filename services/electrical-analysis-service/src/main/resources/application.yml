@@ -1,0 +1,12 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: electrical-analysis-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

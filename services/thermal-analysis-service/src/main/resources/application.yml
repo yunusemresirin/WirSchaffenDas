@@ -1,0 +1,12 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: thermal-analysis-service
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
