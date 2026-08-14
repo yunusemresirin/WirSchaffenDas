@@ -128,6 +128,7 @@ In Postman `retryAlgorithm = THERMAL` verwenden und `05 Retry Failed Algorithm` 
 
 ## Dokumentation
 
+- `docs/arc42.md` – kompakte Architekturdokumentation für das Semesterprojekt
 - `docs/requirements.md` – vollständige Anforderungen
 - `docs/requirements_short.md` – kompakte Requirements-Übersicht
 - `docs/ddd.md` – Domänenmodell und Bounded Contexts
