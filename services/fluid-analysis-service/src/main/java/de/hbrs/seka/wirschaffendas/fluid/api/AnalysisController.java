@@ -1,5 +1,6 @@
 package de.hbrs.seka.wirschaffendas.fluid.api;
 
+import de.hbrs.seka.wirschaffendas.fluid.application.AnalysisWorker;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -7,10 +8,15 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/internal/analyses")
 public class AnalysisController {
 
+    private final AnalysisWorker worker;
+
+    public AnalysisController(AnalysisWorker worker) {
+        this.worker = worker;
+    }
+
     @PostMapping
     public ResponseEntity<Void> start(@RequestBody AnalysisCommand command) {
-        // TODO next step: run FLUID asynchronously, report status/result,
-        // and hand over to the next service in the choreography.
+        worker.execute(command);
         return ResponseEntity.accepted().build();
     }
 }

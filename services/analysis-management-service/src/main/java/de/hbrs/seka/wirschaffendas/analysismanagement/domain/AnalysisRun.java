@@ -43,18 +43,18 @@ public class AnalysisRun {
     }
 
     public void recalculateOverallResult() {
-        boolean unfinished = executions.stream()
-                .anyMatch(e -> e.getStatus() == AnalysisStatus.PENDING || e.getStatus() == AnalysisStatus.RUNNING);
-
-        if (unfinished) {
-            overallResult = null;
-            return;
-        }
-
         boolean failed = executions.stream()
                 .anyMatch(e -> e.getStatus() == AnalysisStatus.FAILED || e.getResult() == AnalysisResult.FAILED);
 
-        overallResult = failed ? AnalysisResult.FAILED : AnalysisResult.OK;
+        if (failed) {
+            overallResult = AnalysisResult.FAILED;
+            return;
+        }
+
+        boolean unfinished = executions.stream()
+                .anyMatch(e -> e.getStatus() == AnalysisStatus.PENDING || e.getStatus() == AnalysisStatus.RUNNING);
+
+        overallResult = unfinished ? null : AnalysisResult.OK;
     }
 
     public String getAnalysisId() { return analysisId; }

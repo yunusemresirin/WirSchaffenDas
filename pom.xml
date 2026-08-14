@@ -18,6 +18,7 @@
 
     <properties>
         <java.version>21</java.version>
+        <resilience4j.version>2.4.0</resilience4j.version>
     </properties>
 
     <modules>
@@ -28,4 +29,13 @@
         <module>services/electrical-analysis-service</module>
         <module>services/engine-management-analysis-service</module>
     </modules>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

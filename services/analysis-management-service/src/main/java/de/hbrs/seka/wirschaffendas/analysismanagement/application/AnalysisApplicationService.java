@@ -5,7 +5,6 @@ import de.hbrs.seka.wirschaffendas.analysismanagement.infrastructure.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.client.RestClientException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -31,7 +30,6 @@ public class AnalysisApplicationService {
     public AnalysisRun start(String configurationId) {
         ConfigurationSnapshot configuration = configurationClient.get(configurationId);
         AnalysisRun run = AnalysisRun.start("A-" + UUID.randomUUID(), configurationId);
-
         AlgorithmExecution fluid = run.execution(AlgorithmName.FLUID);
         fluid.updateStatus(AnalysisStatus.RUNNING, null);
         repository.save(run);
@@ -40,7 +38,7 @@ public class AnalysisApplicationService {
             serviceStarter.start(
                     AlgorithmName.FLUID,
                     new AnalysisCommand(run.getAnalysisId(), configuration, List.of()));
-        } catch (RestClientException exception) {
+        } catch (RuntimeException exception) {
             fluid.updateStatus(AnalysisStatus.FAILED, "Fluid analysis service unavailable");
             run.recalculateOverallResult();
         }
@@ -81,9 +79,7 @@ public class AnalysisApplicationService {
         AlgorithmExecution execution = run.execution(algorithm);
 
         if (execution.getStatus() != AnalysisStatus.FAILED) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT,
-                    "Only failed algorithms can be retried");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Only failed algorithms can be retried");
         }
 
         ConfigurationSnapshot configuration = configurationClient.get(run.getConfigurationId());
@@ -93,13 +89,14 @@ public class AnalysisApplicationService {
                 .toList();
 
         execution.updateStatus(AnalysisStatus.RUNNING, null);
+        run.recalculateOverallResult();
         repository.save(run);
 
         try {
             serviceStarter.start(
                     algorithm,
                     new AnalysisCommand(run.getAnalysisId(), configuration, previousResults));
-        } catch (RestClientException exception) {
+        } catch (RuntimeException exception) {
             execution.updateStatus(AnalysisStatus.FAILED, algorithm + " service unavailable");
         }
 
@@ -109,7 +106,6 @@ public class AnalysisApplicationService {
 
     private AnalysisRun find(String analysisId) {
         return repository.findById(analysisId)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.NOT_FOUND, "Analysis not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Analysis not found"));
     }
 }

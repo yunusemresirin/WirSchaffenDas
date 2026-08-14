@@ -1,6 +1,7 @@
 package de.hbrs.seka.wirschaffendas.analysismanagement.infrastructure;
 
 import de.hbrs.seka.wirschaffendas.analysismanagement.domain.AlgorithmName;
+import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
@@ -27,6 +28,7 @@ public class AnalysisServiceStarter {
         this.engineManagementUrl = engineManagementUrl;
     }
 
+    @CircuitBreaker(name = "analysisServiceStarter")
     public void start(AlgorithmName algorithm, AnalysisCommand command) {
         String baseUrl = switch (algorithm) {
             case FLUID -> fluidUrl;
