@@ -27,16 +27,13 @@ mvn clean verify
 
 Damit werden unter anderem die Unit-/Service-Tests für `AnalysisRun` und den `configuration-service` ausgeführt.
 
-## Gesamtsystem mit Docker Compose starten
+## Docker-Variante 1 – Images aus Docker Hub
+
+Die Standarddatei `docker-compose.yml` verwendet die veröffentlichten Images aus `ysirin2s/seka-wirschaffendas`.
 
 ```bash
-docker compose up --build
-```
-
-Im Hintergrund:
-
-```bash
-docker compose up --build -d
+docker compose pull
+docker compose up -d
 ```
 
 Status anzeigen:
@@ -63,13 +60,32 @@ Persistierte H2-Daten ebenfalls löschen:
 docker compose down -v
 ```
 
+## Docker-Variante 2 – Images lokal aus dem Source Code bauen
+
+Für die lokale Entwicklung bleibt `alternative_docker-compose.yml` erhalten:
+
+```bash
+docker compose -f alternative_docker-compose.yml up --build -d
+```
+
+Damit werden die sechs Images aus den Dockerfiles des Repositories gebaut.
+
 ## Automatisierter End-to-End-Test
 
 Voraussetzungen: Docker Compose, `curl` und `jq`.
 
+Mit Docker-Hub-Images:
+
 ```bash
-docker compose up --build -d
+docker compose up -d
 bash scripts/e2e.sh
+```
+
+Oder mit lokal gebauten Images:
+
+```bash
+docker compose -f alternative_docker-compose.yml up --build -d
+COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
 ```
 
 Das Skript testet sowohl den Happy Path als auch den Ausfall von `thermal-analysis-service` mit anschließendem Retry.
