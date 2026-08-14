@@ -36,7 +36,10 @@ public class AlgorithmExecution {
     public void updateStatus(AnalysisStatus status, String message) {
         this.status = status;
         this.message = message;
-        if (status == AnalysisStatus.FAILED) {
+
+        if (status == AnalysisStatus.RUNNING || status == AnalysisStatus.PENDING) {
+            this.result = null;
+        } else if (status == AnalysisStatus.FAILED) {
             this.result = AnalysisResult.FAILED;
         }
     }

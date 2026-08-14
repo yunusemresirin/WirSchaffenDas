@@ -4,14 +4,12 @@ import de.hbrs.seka.wirschaffendas.analysismanagement.domain.*;
 import de.hbrs.seka.wirschaffendas.analysismanagement.infrastructure.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.UUID;
 
 @Service
-@Transactional
 public class AnalysisApplicationService {
 
     private final AnalysisRunRepository repository;
@@ -32,21 +30,25 @@ public class AnalysisApplicationService {
         AnalysisRun run = AnalysisRun.start("A-" + UUID.randomUUID(), configurationId);
         AlgorithmExecution fluid = run.execution(AlgorithmName.FLUID);
         fluid.updateStatus(AnalysisStatus.RUNNING, null);
-        repository.save(run);
+
+        // Repository transaction is committed before the external HTTP call.
+        // This avoids a race where an asynchronous callback arrives before AnalysisRun exists.
+        run = repository.saveAndFlush(run);
 
         try {
             serviceStarter.start(
                     AlgorithmName.FLUID,
                     new AnalysisCommand(run.getAnalysisId(), configuration, List.of()));
         } catch (RuntimeException exception) {
+            fluid = run.execution(AlgorithmName.FLUID);
             fluid.updateStatus(AnalysisStatus.FAILED, "Fluid analysis service unavailable");
             run.recalculateOverallResult();
+            run = repository.saveAndFlush(run);
         }
 
-        return repository.save(run);
+        return run;
     }
 
-    @Transactional(readOnly = true)
     public AnalysisRun get(String analysisId) {
         return find(analysisId);
     }
@@ -83,25 +85,31 @@ public class AnalysisApplicationService {
         }
 
         ConfigurationSnapshot configuration = configurationClient.get(run.getConfigurationId());
+
+        // A retry gets only successful results from predecessor algorithms.
+        // The failed result of the retried algorithm itself must not be propagated.
         List<PreviousResult> previousResults = run.getExecutions().stream()
                 .filter(item -> item.getResult() != null)
+                .filter(item -> item.getAlgorithm().ordinal() < algorithm.ordinal())
                 .map(item -> new PreviousResult(item.getAlgorithm(), item.getResult()))
                 .toList();
 
         execution.updateStatus(AnalysisStatus.RUNNING, null);
         run.recalculateOverallResult();
-        repository.save(run);
+        run = repository.saveAndFlush(run);
 
         try {
             serviceStarter.start(
                     algorithm,
                     new AnalysisCommand(run.getAnalysisId(), configuration, previousResults));
         } catch (RuntimeException exception) {
+            execution = run.execution(algorithm);
             execution.updateStatus(AnalysisStatus.FAILED, algorithm + " service unavailable");
+            run.recalculateOverallResult();
+            run = repository.saveAndFlush(run);
         }
 
-        run.recalculateOverallResult();
-        return repository.save(run);
+        return run;
     }
 
     private AnalysisRun find(String analysisId) {
