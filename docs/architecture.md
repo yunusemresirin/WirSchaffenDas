@@ -74,17 +74,11 @@ Der Command wird entlang der Choreographie weitergegeben. Jeder erfolgreiche Ser
 
 Ein Retry ist nur für einen Algorithmus im Status `FAILED` erlaubt.
 
-```text
-Client -> Analysis Management -> failed Analysis Service
-```
-
-Bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt. Wenn der wiederholte Algorithmus erfolgreich ist, wird die Choreographie ab diesem Punkt mit den noch ausstehenden nachfolgenden Analysen fortgesetzt. Damit kann ein durch einen temporär nicht erreichbaren Service unterbrochener Ablauf nach Wiederherstellung weiterlaufen.
+Bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt. Wenn der wiederholte Algorithmus erfolgreich ist, wird die Choreographie ab diesem Punkt mit den noch ausstehenden nachfolgenden Analysen fortgesetzt.
 
 ## 7. Circuit Breaker
 
-Service-zu-Service-Aufrufe werden mit Resilience4j abgesichert.
-
-Beispiele:
+Service-zu-Service-Aufrufe werden mit Resilience4j abgesichert:
 
 ```text
 Analysis Management --Circuit Breaker--> Fluid / Retry-Ziel
@@ -93,13 +87,13 @@ Thermal            --Circuit Breaker--> Electrical
 Electrical         --Circuit Breaker--> Engine Management
 ```
 
-Ist der nächste Service nicht erreichbar, markiert der Fallback den betroffenen nächsten Algorithmus als `FAILED`. Der aufrufende Service bleibt erreichbar und die Analyse kann später über Retry fortgesetzt werden.
+Ist der nächste Service nicht erreichbar, markiert der Fallback den betroffenen Algorithmus als `FAILED`. Der aufrufende Service bleibt erreichbar und die Analyse kann später per Retry fortgesetzt werden.
 
 ## 8. Overall Result
 
-- Sobald ein Algorithmus `FAILED` ist, lautet das Gesamtergebnis `FAILED`.
-- Solange kein Fehler vorliegt, aber noch Algorithmen `PENDING` oder `RUNNING` sind, bleibt `overallResult = null`.
-- Wenn alle vier Algorithmen `READY/OK` sind, lautet das Gesamtergebnis `OK`.
+- Sobald ein Algorithmus `FAILED` ist: `overallResult = FAILED`.
+- Solange kein Fehler vorliegt, aber ein Algorithmus `PENDING` oder `RUNNING` ist: `overallResult = null`.
+- Wenn alle vier Algorithmen `READY/OK` sind: `overallResult = OK`.
 
 ## 9. Datenhoheit
 
@@ -118,7 +112,37 @@ domain/          lokales Domänenmodell
 infrastructure/  REST-Clients, Persistenz, Circuit Breaker
 ```
 
-## 11. Zentrale Entwurfsentscheidungen
+## 11. Docker-Deployment
+
+Jeder Microservice besitzt ein eigenes `Dockerfile`. Das Repository enthält eine gemeinsame `docker-compose.yml`.
+
+```text
+Docker Host
+├── configuration-service:8081
+├── analysis-management-service:8082
+├── fluid-analysis-service:8083
+├── thermal-analysis-service:8084
+├── electrical-analysis-service:8085
+└── engine-management-analysis-service:8086
+```
+
+Die Services kommunizieren im Compose-Netzwerk über ihre Service-Namen, z. B. `http://thermal-analysis-service:8084`. `Configuration DB` und `Analysis DB` liegen in getrennten Docker Volumes.
+
+Start des Gesamtsystems:
+
+```bash
+docker compose up --build
+```
+
+Damit wird die technische Anforderung Docker/Docker Compose direkt im Prototyp umgesetzt und Independent Deployability demonstrierbar.
+
+## 12. Postman-Demonstration
+
+Die Collection `postman/WirSchaffenDas.postman_collection.json` deckt die wichtigsten Use Cases ab: Konfiguration anlegen/lesen, Analyse starten/abfragen und Retry eines fehlgeschlagenen Algorithmus.
+
+Für die Fehlerdemo wird beispielsweise `thermal-analysis-service` gestoppt. Der Circuit Breaker macht den Fehler im Analysezustand sichtbar; nach Neustart wird nur `THERMAL` wiederholt und die Choreographie ab dort fortgeführt.
+
+## 13. Zentrale Entwurfsentscheidungen
 
 - fachliche Service-Grenzen statt technischer Layer (`Wrong Cut` vermeiden)
 - REST/HTTP für Version 1

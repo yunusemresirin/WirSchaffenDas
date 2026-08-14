@@ -1,0 +1,84 @@
+services:
+  configuration-service:
+    build:
+      context: .
+      dockerfile: services/configuration-service/Dockerfile
+    ports:
+      - "8081:8081"
+    volumes:
+      - configuration-data:/app/data
+
+  analysis-management-service:
+    build:
+      context: .
+      dockerfile: services/analysis-management-service/Dockerfile
+    ports:
+      - "8082:8082"
+    environment:
+      CONFIGURATION_SERVICE_URL: http://configuration-service:8081
+      FLUID_ANALYSIS_SERVICE_URL: http://fluid-analysis-service:8083
+      THERMAL_ANALYSIS_SERVICE_URL: http://thermal-analysis-service:8084
+      ELECTRICAL_ANALYSIS_SERVICE_URL: http://electrical-analysis-service:8085
+      ENGINE_MANAGEMENT_ANALYSIS_SERVICE_URL: http://engine-management-analysis-service:8086
+    volumes:
+      - analysis-data:/app/data
+    depends_on:
+      - configuration-service
+
+  engine-management-analysis-service:
+    build:
+      context: .
+      dockerfile: services/engine-management-analysis-service/Dockerfile
+    ports:
+      - "8086:8086"
+    environment:
+      ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
+    depends_on:
+      - analysis-management-service
+
+  electrical-analysis-service:
+    build:
+      context: .
+      dockerfile: services/electrical-analysis-service/Dockerfile
+    ports:
+      - "8085:8085"
+    environment:
+      ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
+      ENGINE_MANAGEMENT_ANALYSIS_SERVICE_URL: http://engine-management-analysis-service:8086
+    depends_on:
+      - analysis-management-service
+      - engine-management-analysis-service
+
+  thermal-analysis-service:
+    build:
+      context: .
+      dockerfile: services/thermal-analysis-service/Dockerfile
+    ports:
+      - "8084:8084"
+    environment:
+      ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
+      ELECTRICAL_ANALYSIS_SERVICE_URL: http://electrical-analysis-service:8085
+    depends_on:
+      - analysis-management-service
+      - electrical-analysis-service
+
+  fluid-analysis-service:
+    build:
+      context: .
+      dockerfile: services/fluid-analysis-service/Dockerfile
+    ports:
+      - "8083:8083"
+    environment:
+      ANALYSIS_MANAGEMENT_SERVICE_URL: http://analysis-management-service:8082
+      THERMAL_ANALYSIS_SERVICE_URL: http://thermal-analysis-service:8084
+    depends_on:
+      - analysis-management-service
+      - thermal-analysis-service
+
+volumes:
+  configuration-data:
+  analysis-data:
+
+networks:
+  default:
+    name: wirschaffendas-network
