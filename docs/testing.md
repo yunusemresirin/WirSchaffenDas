@@ -46,16 +46,19 @@ Voraussetzungen:
 - `curl`
 - `jq`
 
-System starten:
+### Variante A – Docker-Hub-Images
 
 ```bash
-docker compose up --build -d
+docker compose pull
+docker compose up -d
+bash scripts/e2e.sh
 ```
 
-Danach:
+### Variante B – lokal gebaute Images
 
 ```bash
-bash scripts/e2e.sh
+docker compose -f alternative_docker-compose.yml up --build -d
+COMPOSE_FILE=alternative_docker-compose.yml bash scripts/e2e.sh
 ```
 
 Das Skript prüft zwei Szenarien.
