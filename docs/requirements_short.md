@@ -11,19 +11,19 @@
 
 | ID | Anforderung | Priorität | Kurz-Akzeptanzkriterium | Status |
 |---|---|---|---|---|
-| FR-01 | Engine-Konfiguration erfassen | MUST | Gültige Konfiguration kann angelegt werden | ⬜ |
-| FR-02 | Konfiguration persistent speichern | MUST | Konfiguration kann über ID gespeichert und erneut geladen werden | ⬜ |
-| FR-03 | Qualitätsanalyse starten | MUST | Analyse erhält eine ID und startet den ersten Algorithmus | ⬜ |
-| FR-04 | Mindestens vier Analyse-Microservices | MUST | Mindestens vier getrennte fachliche Analyse-Services existieren | ⬜ |
-| FR-05 | Choreographie der Analyse | MUST | Analyse läuft nach einmaligem Start ohne manuelle Zwischenschritte weiter | ⬜ |
-| FR-06 | Einzelresultate erzeugen | MUST | Jeder Algorithmus liefert `OK` oder `FAILED` | ⬜ |
-| FR-07 | Gesamtergebnis bestimmen | MUST | Gesamtergebnis wird aus den Einzelresultaten gebildet | ⬜ |
-| FR-08 | Bearbeitungsstatus bereitstellen | MUST | Status `RUNNING`, `READY` und `FAILED` sind abrufbar | ⬜ |
-| FR-09 | Status und Resultate proaktiv melden | MUST | Analyse-Service meldet Statusänderungen selbstständig | ⬜ |
-| FR-10 | Einzelnen Algorithmus erneut starten | MUST | Fehlgeschlagener Algorithmus kann separat wiederholt werden | ⬜ |
-| FR-11 | Serviceausfall behandeln | MUST | Ausfall eines Analyse-Service führt nicht zum Gesamtausfall | ⬜ |
-| FR-12 | REST-Schnittstellen verwenden | MUST | Microservices kommunizieren über definierte REST-Endpunkte | ⬜ |
-| FR-13 | Demonstration über Postman | MUST | Wesentliche Use Cases können über Postman ausgeführt werden | ⬜ |
+| FR-01 | Engine-Konfiguration erfassen | MUST | Gültige Konfiguration kann angelegt werden | ✅ |
+| FR-02 | Konfiguration persistent speichern | MUST | Konfiguration kann über ID gespeichert und erneut geladen werden | ✅ |
+| FR-03 | Qualitätsanalyse starten | MUST | Analyse erhält eine ID und startet den ersten Algorithmus | ✅ |
+| FR-04 | Mindestens vier Analyse-Microservices | MUST | Mindestens vier getrennte fachliche Analyse-Services existieren | ✅ |
+| FR-05 | Choreographie der Analyse | MUST | Analyse läuft nach einmaligem Start ohne manuelle Zwischenschritte weiter | ✅ |
+| FR-06 | Einzelresultate erzeugen | MUST | Jeder Algorithmus liefert `OK` oder `FAILED` | ✅ |
+| FR-07 | Gesamtergebnis bestimmen | MUST | Gesamtergebnis wird aus den Einzelresultaten gebildet | ✅ |
+| FR-08 | Bearbeitungsstatus bereitstellen | MUST | Status `RUNNING`, `READY` und `FAILED` sind abrufbar | ✅ |
+| FR-09 | Status und Resultate proaktiv melden | MUST | Analyse-Service meldet Statusänderungen selbstständig | ✅ |
+| FR-10 | Einzelnen Algorithmus erneut starten | MUST | Fehlgeschlagener Algorithmus kann separat wiederholt werden | ✅ |
+| FR-11 | Serviceausfall behandeln | MUST | Ausfall eines Analyse-Service führt nicht zum Gesamtausfall | ✅ |
+| FR-12 | REST-Schnittstellen verwenden | MUST | Microservices kommunizieren über definierte REST-Endpunkte | ✅ |
+| FR-13 | Demonstration über Postman | MUST | Wesentliche Use Cases können über Postman ausgeführt werden | ✅ |
 
 ---
 
@@ -31,14 +31,14 @@
 
 | ID | Qualitätsziel | Priorität | Umsetzung / Ziel | Status |
 |---|---|---|---|---|
-| QR-01 | Resilience | MUST | Circuit Breaker verhindert Fehlerkaskaden | ⬜ |
-| QR-02 | Monitorability | MUST | Status und Ergebnisse einer Analyse sind nachvollziehbar | ⬜ |
-| QR-03 | Independent Deployability | MUST | Jeder Microservice läuft in einem eigenen Container | ⬜ |
-| QR-04 | Lose Kopplung | MUST | Kommunikation nur über definierte Schnittstellen | ⬜ |
+| QR-01 | Resilience | MUST | Circuit Breaker verhindert Fehlerkaskaden | 🟨 |
+| QR-02 | Monitorability | MUST | Status und Ergebnisse einer Analyse sind nachvollziehbar | 🟨 |
+| QR-03 | Independent Deployability | MUST | Jeder Microservice läuft in einem eigenen Container | ✅ |
+| QR-04 | Lose Kopplung | MUST | Kommunikation nur über definierte Schnittstellen | ✅ |
 | QR-05 | Datenhoheit / keine Shared Persistence | SHOULD | Analyse-Services greifen nicht direkt auf gemeinsame Tabellen zu | ⬜ |
-| QR-06 | Fachliche Service-Grenzen | MUST | Aufteilung nach Business Capabilities statt technischen Schichten | ⬜ |
+| QR-06 | Fachliche Service-Grenzen | MUST | Aufteilung nach Business Capabilities statt technischen Schichten | ✅ |
 | QR-07 | Testbarkeit | SHOULD | Erfolgs-, Fehler- und Retry-Szenarien sind reproduzierbar | ⬜ |
-| QR-08 | Responsiveness | MUST | Laufende Analyse blockiert Statusabfragen nicht | ⬜ |
+| QR-08 | Responsiveness | MUST | Laufende Analyse blockiert Statusabfragen nicht | ✅ |
 
 ---
 
@@ -46,10 +46,10 @@
 
 | ID | Technologie / Anforderung | Priorität | Zweck | Status |
 |---|---|---|---|---|
-| TA-01 | Spring Boot | MUST | Implementierung der Microservices | ⬜ |
-| TA-02 | Docker | MUST | Eigener Container pro Microservice | ⬜ |
-| TA-03 | Docker Compose | MUST | Start und Komposition des Gesamtsystems | ⬜ |
-| TA-04 | Resilience4j | MUST | Circuit-Breaker-Pattern | ⬜ |
+| TA-01 | Spring Boot | MUST | Implementierung der Microservices | ✅ |
+| TA-02 | Docker | MUST | Eigener Container pro Microservice | ✅ |
+| TA-03 | Docker Compose | MUST | Start und Komposition des Gesamtsystems | ✅ |
+| TA-04 | Resilience4j | MUST | Circuit-Breaker-Pattern | 🟨 |
 | TA-05 | Apache Kafka | COULD | Optionale Übertragung von Statusnachrichten | ⬜ |
 
 ---
@@ -58,12 +58,12 @@
 
 | ID | Use Case | Akteur | Priorität | Status |
 |---|---|---|---|---|
-| UC-01 | Engine-Konfiguration erstellen | Ingenieur | MUST | ⬜ |
-| UC-02 | Qualitätsanalyse starten | Ingenieur | MUST | ⬜ |
-| UC-03 | Analysestatus betrachten | Ingenieur | MUST | ⬜ |
-| UC-04 | Analyseergebnis betrachten | Ingenieur | MUST | ⬜ |
-| UC-05 | Fehlgeschlagenen Algorithmus wiederholen | Ingenieur | MUST | ⬜ |
-| UC-06 | Ausfall eines Microservices behandeln | Ingenieur / Demo-Operator | MUST | ⬜ |
+| UC-01 | Engine-Konfiguration erstellen | Ingenieur | MUST | ✅ |
+| UC-02 | Qualitätsanalyse starten | Ingenieur | MUST | ✅ |
+| UC-03 | Analysestatus betrachten | Ingenieur | MUST | ✅ |
+| UC-04 | Analyseergebnis betrachten | Ingenieur | MUST | ✅ |
+| UC-05 | Fehlgeschlagenen Algorithmus wiederholen | Ingenieur | MUST | ✅ |
+| UC-06 | Ausfall eines Microservices behandeln | Ingenieur / Demo-Operator | MUST | ✅ |
 
 ---
 
@@ -99,20 +99,20 @@
 
 Der Prototyp gilt als fertig, wenn folgende Punkte demonstriert werden können:
 
-- [ ] System startet mit `docker compose up --build`
-- [ ] Engine-Konfiguration kann erstellt werden
-- [ ] gespeicherte Konfiguration kann abgerufen werden
-- [ ] Qualitätsanalyse kann gestartet werden
-- [ ] mindestens vier Analyse-Microservices werden verwendet
-- [ ] Status der Analysealgorithmen ist sichtbar
-- [ ] Einzelresultate sind sichtbar
-- [ ] Gesamtergebnis wird berechnet
-- [ ] ein Microservice kann gezielt gestoppt werden
+- [ x ] System startet mit `docker compose up --build`
+- [ x ] Engine-Konfiguration kann erstellt werden
+- [ x ] gespeicherte Konfiguration kann abgerufen werden
+- [ x ] Qualitätsanalyse kann gestartet werden
+- [ x ] mindestens vier Analyse-Microservices werden verwendet
+- [ x ] Status der Analysealgorithmen ist sichtbar
+- [ x ] Einzelresultate sind sichtbar
+- [ x ] Gesamtergebnis wird berechnet
+- [ x ] ein Microservice kann gezielt gestoppt werden
 - [ ] Circuit Breaker behandelt den Ausfall
-- [ ] fehlgeschlagener Algorithmus kann erneut gestartet werden
-- [ ] Postman Collection funktioniert
-- [ ] Dockerfiles sind vorhanden
-- [ ] `docker-compose.yml` ist vorhanden
+- [ x ] fehlgeschlagener Algorithmus kann erneut gestartet werden
+- [ x ] Postman Collection funktioniert
+- [ x ] Dockerfiles sind vorhanden
+- [ x ] `docker-compose.yml` ist vorhanden
 - [ ] UML-Architekturmodelle sind vorhanden
 - [ ] arc42-Dokumentation ist fertig
 
