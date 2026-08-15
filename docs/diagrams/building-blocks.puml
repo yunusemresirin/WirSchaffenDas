@@ -4,8 +4,10 @@ skinparam componentStyle rectangle
 
 title Bausteinsicht – WirSchaffenDas Engine Quality Analysis
 
-actor "Ingenieur / Postman" as Client
+actor "Ingenieur" as Engineer
+actor "Postman\n(Test-Client)" as Postman
 
+component "web-ui\nReact + Material UI + Vite" as WebUI
 component "configuration-service" as Configuration
 component "analysis-management-service" as Management
 component "fluid-analysis-service" as Fluid
@@ -16,8 +18,11 @@ component "engine-management-analysis-service" as Engine
 database "Configuration DB" as ConfigDb
 database "Analysis DB" as AnalysisDb
 
-Client --> Configuration : REST\nKonfiguration anlegen/lesen
-Client --> Management : REST\nAnalyse starten/status/retry
+Engineer --> WebUI : Browser
+WebUI --> Configuration : REST\nKonfiguration anlegen/lesen
+WebUI --> Management : REST\nAnalyse starten/status/retry
+Postman --> Configuration : REST (Test)
+Postman --> Management : REST (Test)
 
 Configuration --> ConfigDb : besitzt / persistiert
 Management --> AnalysisDb : besitzt / persistiert
@@ -33,6 +38,17 @@ Thermal --> Management : Status / Resultat
 Electrical --> Management : Status / Resultat
 Engine --> Management : Status / Resultat
 
+WebUI ..> Configuration : Actuator Health\nvia Reverse Proxy
+WebUI ..> Management : Actuator / CB State
+WebUI ..> Fluid : Actuator / CB State
+WebUI ..> Thermal : Actuator / CB State
+WebUI ..> Electrical : Actuator / CB State
+WebUI ..> Engine : Actuator Health
+
+note bottom of WebUI
+  Präsentationskomponente
+  keine Ablauf-Orchestration
+end note
 note bottom of Fluid
   stateless
 end note
