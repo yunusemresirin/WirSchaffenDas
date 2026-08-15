@@ -3,8 +3,11 @@ skinparam componentStyle rectangle
 
 title Verteilungssicht – Docker Compose Deployment
 
+actor "Ingenieur\nWeb Browser" as Browser
+
 node "Entwicklungsrechner / Docker Host" as Host {
     node "Docker Compose\nwirschaffendas-network" as Network {
+        node "web-ui\nNginx + React SPA\nHost :3000 -> Container :80" as WebUI
         node "configuration-service\nContainer :8081" as Configuration
         node "analysis-management-service\nContainer :8082" as Management
         node "fluid-analysis-service\nContainer :8083" as Fluid
@@ -17,11 +20,21 @@ node "Entwicklungsrechner / Docker Host" as Host {
     artifact "analysis-data\nDocker Volume" as AnalysisVolume
 }
 
+Browser --> WebUI : HTTP :3000
+WebUI --> Configuration : /api/configurations\nReverse Proxy
+WebUI --> Management : /api/analyses\nReverse Proxy
+WebUI ..> Configuration : /monitor/.../actuator/health
+WebUI ..> Management : Actuator / CB Health
+WebUI ..> Fluid : Actuator / CB Health
+WebUI ..> Thermal : Actuator / CB Health
+WebUI ..> Electrical : Actuator / CB Health
+WebUI ..> Engine : Actuator Health
+
 Configuration --> ConfigVolume : H2-Datei
 Management --> AnalysisVolume : H2-Datei
 
 Management --> Configuration : HTTP / Compose DNS
-Management --> Fluid : HTTP / Compose DNS
+Management --> Fluid : HTTP / Compose DNS\nCircuit Breaker
 Fluid --> Thermal : HTTP + Circuit Breaker
 Thermal --> Electrical : HTTP + Circuit Breaker
 Electrical --> Engine : HTTP + Circuit Breaker
@@ -31,8 +44,14 @@ Thermal --> Management : Callback REST
 Electrical --> Management : Callback REST
 Engine --> Management : Callback REST
 
+note bottom of WebUI
+  Presentation Adapter
+  React + Material UI + Vite Build
+  Nginx Runtime / Reverse Proxy
+end note
+
 note bottom of Network
-  Jeder Microservice ist separat containerisiert
+  Jeder Backend-Microservice ist separat containerisiert
   und kann unabhängig gestoppt/gestartet werden.
 end note
 
