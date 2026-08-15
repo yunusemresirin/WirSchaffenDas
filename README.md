@@ -10,6 +10,7 @@ Proof-of-Concept einer Microservice-basierten Qualitätsanalyse für Diesel-Engi
 - `thermal-analysis-service` – Port 8084
 - `electrical-analysis-service` – Port 8085
 - `engine-management-analysis-service` – Port 8086
+- `web-ui` – React + Material UI + Vite, erreichbar über Port 3000
 
 Die Analyse läuft choreographiert:
 
@@ -18,6 +19,35 @@ Analysis Management -> Fluid -> Thermal -> Electrical -> Engine Management
 ```
 
 Status und Ergebnisse werden von den Analyse-Services proaktiv an `analysis-management-service` zurückgemeldet. Service-zu-Service-Aufrufe sind mit Resilience4j Circuit Breakern abgesichert.
+
+## Web UI
+
+Das Frontend liegt unter `frontend/` und dient als kompakte Bedien- und Demonstrationsoberfläche für den PoC.
+
+Funktionen:
+
+- Engine-Konfiguration anlegen und persistent speichern
+- vorhandene Konfiguration über `configurationId` laden
+- Qualitätsanalyse starten
+- `OverallResult` anzeigen
+- Status und Resultat aller vier Analysealgorithmen live anzeigen
+- Retry-Button für jeden fehlgeschlagenen Algorithmus
+- Runtime-Erreichbarkeit aller sechs Backend-Services anzeigen
+- Circuit-Breaker-Zustände `CLOSED`, `OPEN` und `HALF_OPEN` visualisieren
+
+Die UI führt keine eigene Ablaufsteuerung durch. Sie verwendet ausschließlich die bestehenden REST-Endpunkte; die eigentliche Analyse bleibt choreographiert.
+
+### Frontend lokal starten
+
+Backend-Services auf Ports 8081–8086 starten und anschließend:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Vite läuft standardmäßig unter `http://localhost:5173` und proxyt die API-/Actuator-Anfragen an die Backend-Services.
 
 ## Lokal mit Maven prüfen
 
@@ -29,12 +59,20 @@ Damit werden unter anderem die Unit-/Service-Tests für `AnalysisRun` und den `c
 
 ## Docker-Variante 1 – Images aus Docker Hub
 
-Die Standarddatei `docker-compose.yml` verwendet die veröffentlichten Images aus `ysirin2s/seka-wirschaffendas`.
+Die Standarddatei `docker-compose.yml` verwendet die veröffentlichten Backend-Images aus `ysirin2s/seka-wirschaffendas` und baut die Web-UI lokal.
 
 ```bash
 docker compose pull
-docker compose up -d
+docker compose up --build -d
 ```
+
+Danach ist das Dashboard erreichbar unter:
+
+```text
+http://localhost:3000
+```
+
+Wichtig: Nach Änderungen an den Backend-Services müssen die Docker-Hub-Images neu gebaut und gepusht werden, damit auch die veröffentlichte Variante den aktuellen Resilience4j-/Actuator-Stand enthält.
 
 Status anzeigen:
 
@@ -60,15 +98,44 @@ Persistierte H2-Daten ebenfalls löschen:
 docker compose down -v
 ```
 
-## Docker-Variante 2 – Images lokal aus dem Source Code bauen
+## Docker-Variante 2 – alle Images lokal aus dem Source Code bauen
 
-Für die lokale Entwicklung bleibt `alternative_docker-compose.yml` erhalten:
+Für Entwicklung und Prüfung des neuesten Source-Codes:
 
 ```bash
 docker compose -f alternative_docker-compose.yml up --build -d
 ```
 
-Damit werden die sechs Images aus den Dockerfiles des Repositories gebaut.
+Diese Variante baut alle sechs Backend-Services und die Web-UI direkt aus dem Repository. Das Dashboard ist ebenfalls unter `http://localhost:3000` erreichbar.
+
+## Circuit-Breaker- und Retry-Demo über die UI
+
+Für die prototypische Visualisierung ist der Breaker bewusst so konfiguriert, dass bereits ein fehlgeschlagener geschützter Aufruf den Zustand `OPEN` auslösen kann. Nach 10 Sekunden wechselt er automatisch nach `HALF_OPEN`.
+
+Beispiel Thermal-Ausfall:
+
+```bash
+docker compose -f alternative_docker-compose.yml stop thermal-analysis-service
+```
+
+Danach in der Web-UI:
+
+1. Konfiguration speichern oder laden.
+2. Neue Analyse starten.
+3. Fluid läuft erfolgreich durch.
+4. Der Aufruf Fluid → Thermal schlägt fehl.
+5. `THERMAL = FAILED`, `OverallResult = FAILED` und der Breaker Fluid → Thermal wird `OPEN` angezeigt.
+6. Nach ca. 10 Sekunden wird `HALF_OPEN` sichtbar.
+
+Thermal wieder starten:
+
+```bash
+docker compose -f alternative_docker-compose.yml start thermal-analysis-service
+```
+
+Danach in der UI beim fehlgeschlagenen Thermal-Algorithmus auf **Retry** klicken. Die Analyse wird ab Thermal fortgesetzt; bereits erfolgreiche Vorgänger werden nicht erneut ausgeführt.
+
+Hinweis: Der Retry wird vom `analysis-management-service` direkt an das Retry-Ziel geschickt. Der Breaker Fluid → Thermal wird deshalb erst bei einem späteren normalen Aufruf über genau diese Kante wieder vollständig geschlossen. Das ist gewollt und macht den Unterschied zwischen Choreographie-Pfad und Management-Retry sichtbar.
 
 ## Automatisierter End-to-End-Test
 
@@ -107,24 +174,6 @@ Happy Path:
 5. `04 Get Analysis Status / Result`
 
 Erwartetes Endergebnis: alle vier Algorithmen `READY / OK` und `overallResult = OK`.
-
-## Circuit-Breaker- und Retry-Demo
-
-Thermal Service stoppen:
-
-```bash
-docker compose stop thermal-analysis-service
-```
-
-Danach eine neue Konfiguration und Analyse über Postman starten. Nach der Fluid Analysis kann Thermal nicht erreicht werden und wird als `FAILED` sichtbar.
-
-Service wieder starten:
-
-```bash
-docker compose start thermal-analysis-service
-```
-
-In Postman `retryAlgorithm = THERMAL` verwenden und `05 Retry Failed Algorithm` ausführen. Die Choreographie läuft anschließend ab Thermal weiter.
 
 ## Dokumentation
 
