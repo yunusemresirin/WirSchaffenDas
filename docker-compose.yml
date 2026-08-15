@@ -63,6 +63,20 @@ services:
       - analysis-management-service
       - thermal-analysis-service
 
+  web-ui:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - configuration-service
+      - analysis-management-service
+      - fluid-analysis-service
+      - thermal-analysis-service
+      - electrical-analysis-service
+      - engine-management-analysis-service
+
 volumes:
   configuration-data:
   analysis-data:
