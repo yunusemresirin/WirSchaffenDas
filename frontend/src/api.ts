@@ -10,12 +10,14 @@ import type {
 } from './types';
 
 async function requestJson<T>(url: string, init?: RequestInit): Promise<T> {
+  const headers = new Headers(init?.headers);
+  if (init?.body !== undefined) {
+    headers.set('Content-Type', 'application/json');
+  }
+
   const response = await fetch(url, {
     ...init,
-    headers: {
-      'Content-Type': 'application/json',
-      ...init?.headers,
-    },
+    headers,
   });
 
   if (!response.ok) {
@@ -134,7 +136,11 @@ async function fetchHealth(key: ServiceKey): Promise<ServiceHealth> {
       key,
       reachable: true,
       actuatorStatus:
-        typeof payload.status === 'string' ? payload.status : response.ok ? 'UP' : 'DOWN',
+        typeof payload.status === 'string'
+          ? payload.status
+          : response.ok
+            ? 'UP'
+            : 'DOWN',
       circuitBreaker: findCircuitBreaker(payload),
       checkedAt: new Date().toISOString(),
     };
