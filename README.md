@@ -57,22 +57,45 @@ mvn clean verify
 
 Damit werden unter anderem die Unit-/Service-Tests für `AnalysisRun` und den `configuration-service` ausgeführt.
 
-## Docker-Variante 1 – Images aus Docker Hub
+## Docker-Versionierung
+
+Alle sechs Backend-Images werden gemeinsam unter dem Docker-Hub-Repository `ysirin2s/seka-wirschaffendas` veröffentlicht. Der Service-Name und die Release-Version stehen im Tag, zum Beispiel:
+
+```text
+ysirin2s/seka-wirschaffendas:configuration-service-v0.1.0
+ysirin2s/seka-wirschaffendas:fluid-analysis-service-v0.1.0
+```
+
+Die gemeinsame Version wird über `VERSION` gesetzt. Als Vorlage dient `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Unter PowerShell kann die Datei alternativ manuell als `.env` kopiert werden. `.env` ist nicht versioniert.
+
+## Docker-Variante 1 – versionierte Images aus Docker Hub
 
 Die Standarddatei `docker-compose.yml` verwendet die veröffentlichten Backend-Images aus `ysirin2s/seka-wirschaffendas` und baut die Web-UI lokal.
+
+Beispiel `.env`:
+
+```env
+VERSION=0.1.0
+```
+
+Danach:
 
 ```bash
 docker compose pull
 docker compose up --build -d
 ```
 
-Danach ist das Dashboard erreichbar unter:
+Das Dashboard ist anschließend erreichbar unter:
 
 ```text
 http://localhost:3000
 ```
-
-Wichtig: Nach Änderungen an den Backend-Services müssen die Docker-Hub-Images neu gebaut und gepusht werden, damit auch die veröffentlichte Variante den aktuellen Resilience4j-/Actuator-Stand enthält.
 
 Status anzeigen:
 
@@ -107,6 +130,53 @@ docker compose -f alternative_docker-compose.yml up --build -d
 ```
 
 Diese Variante baut alle sechs Backend-Services und die Web-UI direkt aus dem Repository. Das Dashboard ist ebenfalls unter `http://localhost:3000` erreichbar.
+
+## Versioniertes Release nach Docker Hub
+
+Das PowerShell-Skript `scripts/release.ps1` baut und pusht alle sechs Backend-Images in einem Schritt. Manuelles `docker tag` und einzelne `docker push`-Befehle sind nicht nötig.
+
+Vorher einmal bei Docker Hub anmelden:
+
+```powershell
+docker login
+```
+
+Release erstellen:
+
+```powershell
+.\scripts\release.ps1 0.2.0
+```
+
+Dadurch werden unter anderem folgende Tags erzeugt und gepusht:
+
+```text
+configuration-service-v0.2.0
+analysis-management-service-v0.2.0
+fluid-analysis-service-v0.2.0
+thermal-analysis-service-v0.2.0
+electrical-analysis-service-v0.2.0
+engine-management-analysis-service-v0.2.0
+```
+
+### Retention: nur aktuelle und vorherige Version behalten
+
+Für die automatische Bereinigung alter Docker-Hub-Tags benötigt das Skript zusätzlich ein Docker-Hub Personal Access Token (PAT). Das Token wird nur als Umgebungsvariable verwendet und niemals in Git gespeichert.
+
+Für die aktuelle PowerShell-Sitzung:
+
+```powershell
+$env:DOCKERHUB_PAT = "<dein Docker-Hub-PAT>"
+```
+
+Danach reicht weiterhin ein einzelner Befehl:
+
+```powershell
+.\scripts\release.ps1 0.3.0
+```
+
+Das Skript liest die vorhandenen versionierten Service-Tags aus Docker Hub, behält die zwei neuesten gemeinsamen Releases und versucht ältere Service-Tags zu entfernen. Falls die Docker-Hub-Tag-Löschung über die API in der aktuellen Hub-Version nicht akzeptiert wird, wird das Release nicht verworfen; das Skript gibt stattdessen eine Warnung aus und der betreffende alte Tag kann im Docker-Hub-Repository unter **Tags** gelöscht werden.
+
+Ohne `DOCKERHUB_PAT` funktionieren Build und Push weiterhin vollständig; lediglich die automatische Remote-Bereinigung wird übersprungen.
 
 ## Circuit-Breaker- und Retry-Demo über die UI
 
