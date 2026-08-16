@@ -28,13 +28,23 @@ resilience4j:
   circuitbreaker:
     instances:
       analysisServiceStarter:
-        sliding-window-size: 5
-        minimum-number-of-calls: 2
+        sliding-window-size: 2
+        minimum-number-of-calls: 1
+        permitted-number-of-calls-in-half-open-state: 1
         failure-rate-threshold: 50
         wait-duration-in-open-state: 10s
+        automatic-transition-from-open-to-half-open-enabled: true
+        register-health-indicator: true
+        event-consumer-buffer-size: 10
 
 management:
+  health:
+    circuitbreakers:
+      enabled: true
+  endpoint:
+    health:
+      show-details: always
   endpoints:
     web:
       exposure:
-        include: health,info
+        include: health,info,circuitbreakers,circuitbreakerevents

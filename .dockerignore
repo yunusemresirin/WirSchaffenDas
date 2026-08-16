@@ -3,6 +3,8 @@
 .vscode
 **/target
 **/data
+**/node_modules
+**/dist
 *.log
 *.zip
 docs
